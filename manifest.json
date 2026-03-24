@@ -5,7 +5,19 @@
   "description": "ももいろクローバーZ公式スケジュールページを見やすく置き換えます。複数月を一括表示・日付グルーピング・クライアントサイドフィルタリング対応。",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "ももクロ スケジュール"
+    "default_title": "ももクロ スケジュール",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   },
   "background": {
     "service_worker": "background.js"
