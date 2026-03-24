@@ -1,4 +1,4 @@
-(async function () {
+(function () {
   'use strict';
 
   // 二重起動防止
@@ -23,14 +23,21 @@
   let calendarYear = todayDate.getFullYear();
   let calendarMonth = todayDate.getMonth();
 
-  const settings = await loadSettings();
-  const detectedTheme = detectThemeColor();
-  if (detectedTheme) applyThemePalette(detectedTheme);
+  loadSettings().then(settings => {
+    if (!settings.enabled) {
+      injectDisabledBadge();
+      return;
+    }
 
-  if (!settings.enabled) {
-    injectDisabledBadge();
-    return;
-  }
+    // ─── エントリポイント ─────────────────────────────────────────
+    buildUI();
+    setupFilterListeners();
+    loadAllEvents().catch(err => {
+      const loading = document.getElementById('mcz-loading');
+      if (loading) loading.innerHTML = `<p class="mcz-error">⚠️ データ取得に失敗しました: ${escapeHtml(err.message)}</p>`;
+      console.error('[mcz-schedule]', err);
+    });
+  });
 
   // ─── UI 構築 ─────────────────────────────────────────────────
   function buildUI() {
@@ -164,7 +171,8 @@
     if (cached) {
       // キャッシュヒット: 即時描画してバックグラウンドで再fetch
       allEvents = cached;
-      document.getElementById('mcz-loading').style.display = 'none';
+      const loading = document.getElementById('mcz-loading');
+      if (loading) loading.style.display = 'none';
       renderEvents();
       fetchAndStore().then(events => {
         allEvents = events;
@@ -173,7 +181,8 @@
     } else {
       // キャッシュミス: fetch完了後に描画
       allEvents = await fetchAndStore();
-      document.getElementById('mcz-loading').style.display = 'none';
+      const loading = document.getElementById('mcz-loading');
+      if (loading) loading.style.display = 'none';
       renderEvents();
     }
   }
@@ -193,6 +202,7 @@
 
   function renderListView() {
     const content = document.getElementById('mcz-content');
+    if (!content) return;
 
     const filtered = activeFilter === 'ALL'
       ? allEvents
@@ -257,6 +267,7 @@
 
   function renderCalendar() {
     const content = document.getElementById('mcz-content');
+    if (!content) return;
 
     const filtered = activeFilter === 'ALL'
       ? allEvents
@@ -317,7 +328,8 @@
         e.stopPropagation();
         const day = parseInt(cell.dataset.day, 10);
         const evs = dayMap.get(day) || [];
-        const wrap = document.getElementById('mcz-cal-popover-wrap');
+    const wrap = document.getElementById('mcz-cal-popover-wrap');
+    if (!wrap) return;
         const dateStr = `${calendarYear}年${calendarMonth + 1}月${day}日`;
         const evHtml = evs.map(ev => `
           <div class="mcz-event-item">
@@ -363,80 +375,15 @@
   // ─── ユーティリティ ───────────────────────────────────────────
   function loadSettings() {
     return new Promise(resolve => {
-      chrome.storage.sync.get(DEFAULT_SETTINGS, result => resolve(result));
-    });
-  }
-
-  function detectThemeColor() {
-    const cssVarColor = detectThemeColorFromCssVars();
-    if (cssVarColor) return cssVarColor;
-
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta && normalizeColor(meta.content)) return normalizeColor(meta.content);
-
-    const selectors = [
-      'header', '.header', '#header', '.site-header', '.global-header',
-      '.l-header', '.g-header', '.gHeader', '.main-header',
-    ];
-
-    for (const sel of selectors) {
-      const el = document.querySelector(sel);
-      if (!el) continue;
-      const styles = getComputedStyle(el);
-      const bg = styles.backgroundColor;
-      const color = normalizeColor(bg);
-      if (color && !isNearWhite(color) && !isTransparent(bg)) return color;
-      const fromGradient = extractGradientColor(styles.backgroundImage);
-      if (fromGradient) return fromGradient;
-    }
-
-    const bodyColor = normalizeColor(getComputedStyle(document.body).backgroundColor);
-    if (bodyColor && !isNearWhite(bodyColor)) return bodyColor;
-
-    const link = document.querySelector('a');
-    if (link) {
-      const linkColor = normalizeColor(getComputedStyle(link).color);
-      if (linkColor && !isNearWhite(linkColor)) return linkColor;
-    }
-    return null;
-  }
-
-  function detectThemeColorFromCssVars() {
-    const styles = getComputedStyle(document.documentElement);
-    const candidates = [
-      '--theme-color',
-      '--primary',
-      '--primary-color',
-      '--color-primary',
-      '--main',
-      '--main-color',
-      '--accent',
-      '--accent-color',
-      '--brand',
-      '--brand-color',
-    ];
-    for (const name of candidates) {
-      const value = styles.getPropertyValue(name).trim();
-      const normalized = normalizeColor(value);
-      if (normalized && !isNearWhite(normalized)) return normalized;
-    }
-    return null;
-  }
-
-  function extractGradientColor(value) {
-    if (!value || value === 'none') return null;
-    const rgbMatch = value.match(/rgba?\([^)]+\)/i);
-    if (rgbMatch) return normalizeColor(rgbMatch[0]);
-    const hexMatch = value.match(/#(?:[0-9a-fA-F]{3}){1,2}/);
-    if (hexMatch) return normalizeHex(hexMatch[0]);
-    return null;
-  }
-
-  function applyThemePalette(baseHex) {
-    const palette = buildPalette(baseHex);
-    const root = document.documentElement.style;
-    Object.entries(palette).forEach(([key, value]) => {
-      root.setProperty(`--mcz-${key}`, value);
+      try {
+        if (!isExtensionLive() || !chrome?.storage?.sync) {
+          resolve(DEFAULT_SETTINGS);
+          return;
+        }
+        chrome.storage.sync.get(DEFAULT_SETTINGS, result => resolve(result));
+      } catch (_) {
+        resolve(DEFAULT_SETTINGS);
+      }
     });
   }
 
@@ -451,147 +398,40 @@
     `;
     document.body.appendChild(badge);
     const btn = badge.querySelector('.mcz-disabled-btn');
-    btn.addEventListener('click', () => {
-      chrome.storage.sync.set({ enabled: true }, () => {
+    btn.addEventListener('click', withSafeContext(() => {
+      if (!isExtensionLive()) return;
+      try {
+        chrome.storage.sync.set({ enabled: true }, () => {
+          location.reload();
+        });
+      } catch (_) {
         location.reload();
-      });
-    });
-  }
-
-  function buildPalette(hex) {
-    const rgb = hexToRgb(hex);
-    if (!rgb) return {};
-    const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-    const primary = rgbToHex(rgb.r, rgb.g, rgb.b);
-    const primaryDark = hslToHex(hsl.h, hsl.s, clamp(hsl.l - 10, 15, 60));
-    const primaryDarker = hslToHex(hsl.h, hsl.s, clamp(hsl.l - 20, 10, 55));
-    const primaryLight = hslToHex(hsl.h, clamp(hsl.s + 4, 40, 90), clamp(hsl.l + 12, 40, 85));
-    const primarySoft = hslToHex(hsl.h, clamp(hsl.s - 20, 15, 55), clamp(hsl.l + 35, 75, 97));
-    const primaryPale = hslToHex(hsl.h, clamp(hsl.s - 35, 8, 35), clamp(hsl.l + 44, 88, 99));
-    const primaryBorder = hslToHex(hsl.h, clamp(hsl.s - 25, 10, 45), clamp(hsl.l + 28, 70, 90));
-    const primaryMuted = hslToHex(hsl.h, clamp(hsl.s - 10, 20, 60), clamp(hsl.l - 5, 30, 70));
-    return {
-      primary,
-      'primary-dark': primaryDark,
-      'primary-darker': primaryDarker,
-      'primary-light': primaryLight,
-      'primary-soft': primarySoft,
-      'primary-pale': primaryPale,
-      'primary-border': primaryBorder,
-      'primary-muted': primaryMuted,
-    };
-  }
-
-  function clamp(value, min, max) {
-    return Math.min(Math.max(value, min), max);
-  }
-
-  function normalizeColor(value) {
-    if (!value || typeof value !== 'string') return null;
-    const v = value.trim();
-    if (v.startsWith('#')) return normalizeHex(v);
-    const rgbMatch = v.match(/^rgba?\(([^)]+)\)$/i);
-    if (!rgbMatch) return null;
-    const parts = rgbMatch[1].split(',').map(p => p.trim());
-    if (parts.length < 3) return null;
-    const r = parseInt(parts[0], 10);
-    const g = parseInt(parts[1], 10);
-    const b = parseInt(parts[2], 10);
-    if ([r, g, b].some(n => Number.isNaN(n))) return null;
-    return rgbToHex(r, g, b);
-  }
-
-  function normalizeHex(hex) {
-    const h = hex.replace('#', '').trim();
-    if (h.length === 3) {
-      return `#${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}`.toLowerCase();
-    }
-    if (h.length === 6) return `#${h.toLowerCase()}`;
-    return null;
-  }
-
-  function rgbToHex(r, g, b) {
-    return `#${[r, g, b].map(c => c.toString(16).padStart(2, '0')).join('')}`;
-  }
-
-  function hexToRgb(hex) {
-    const normalized = normalizeHex(hex);
-    if (!normalized) return null;
-    const value = normalized.replace('#', '');
-    return {
-      r: parseInt(value.slice(0, 2), 16),
-      g: parseInt(value.slice(2, 4), 16),
-      b: parseInt(value.slice(4, 6), 16),
-    };
-  }
-
-  function rgbToHsl(r, g, b) {
-    const rn = r / 255;
-    const gn = g / 255;
-    const bn = b / 255;
-    const max = Math.max(rn, gn, bn);
-    const min = Math.min(rn, gn, bn);
-    let h = 0;
-    let s = 0;
-    const l = (max + min) / 2;
-
-    if (max !== min) {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case rn: h = (gn - bn) / d + (gn < bn ? 6 : 0); break;
-        case gn: h = (bn - rn) / d + 2; break;
-        case bn: h = (rn - gn) / d + 4; break;
       }
-      h /= 6;
-    }
-    return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+    }));
   }
 
-  function hslToHex(h, s, l) {
-    const rgb = hslToRgb(h, s, l);
-    return rgbToHex(rgb.r, rgb.g, rgb.b);
-  }
-
-  function hslToRgb(h, s, l) {
-    const sn = s / 100;
-    const ln = l / 100;
-    const c = (1 - Math.abs(2 * ln - 1)) * sn;
-    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-    const m = ln - c / 2;
-    let rn = 0;
-    let gn = 0;
-    let bn = 0;
-
-    if (h < 60) { rn = c; gn = x; bn = 0; }
-    else if (h < 120) { rn = x; gn = c; bn = 0; }
-    else if (h < 180) { rn = 0; gn = c; bn = x; }
-    else if (h < 240) { rn = 0; gn = x; bn = c; }
-    else if (h < 300) { rn = x; gn = 0; bn = c; }
-    else { rn = c; gn = 0; bn = x; }
-
-    return {
-      r: Math.round((rn + m) * 255),
-      g: Math.round((gn + m) * 255),
-      b: Math.round((bn + m) * 255),
+  function withSafeContext(handler) {
+    return (...args) => {
+      try {
+        handler(...args);
+      } catch (err) {
+        if (isExtensionContextInvalidated(err)) return;
+        throw err;
+      }
     };
   }
 
-  function isNearWhite(hex) {
-    const rgb = hexToRgb(hex);
-    if (!rgb) return false;
-    return rgb.r > 235 && rgb.g > 235 && rgb.b > 235;
+  function isExtensionContextInvalidated(err) {
+    const message = err && typeof err.message === 'string' ? err.message : '';
+    return message.includes('Extension context invalidated');
   }
 
-  function isTransparent(value) {
-    if (!value) return false;
-    if (value === 'transparent') return true;
-    const match = value.match(/^rgba?\(([^)]+)\)$/i);
-    if (!match) return false;
-    const parts = match[1].split(',').map(p => p.trim());
-    if (parts.length < 4) return false;
-    const alpha = parseFloat(parts[3]);
-    return !Number.isNaN(alpha) && alpha === 0;
+  function isExtensionLive() {
+    try {
+      return !!chrome?.runtime?.id;
+    } catch (_) {
+      return false;
+    }
   }
 
   function escapeHtml(str) {
@@ -629,38 +469,43 @@
   function setupFilterListeners() {
     const toggle = document.getElementById('mcz-toggle');
     if (toggle) {
-      toggle.addEventListener('click', () => {
-        chrome.storage.sync.set({ enabled: false }, () => {
+      toggle.addEventListener('click', withSafeContext(() => {
+        if (!isExtensionLive()) return;
+        try {
+          chrome.storage.sync.set({ enabled: false }, () => {
+            location.reload();
+          });
+        } catch (_) {
           location.reload();
-        });
-      });
+        }
+      }));
     }
 
-    document.getElementById('mcz-filters').addEventListener('click', e => {
-      const btn = e.target.closest('.mcz-filter-btn');
-      if (!btn) return;
-      activeFilter = btn.dataset.cat;
-      document.querySelectorAll('.mcz-filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderEvents();
-    });
+    const filters = document.getElementById('mcz-filters');
+    if (filters) {
+      filters.addEventListener('click', withSafeContext(e => {
+        if (!isExtensionLive()) return;
+        const btn = e.target.closest('.mcz-filter-btn');
+        if (!btn) return;
+        activeFilter = btn.dataset.cat;
+        document.querySelectorAll('.mcz-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderEvents();
+      }));
+    }
 
-    document.getElementById('mcz-view-toggle').addEventListener('click', e => {
-      const btn = e.target.closest('.mcz-view-btn');
-      if (!btn) return;
-      activeView = btn.dataset.view;
-      document.querySelectorAll('.mcz-view-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderEvents();
-    });
+    const viewToggle = document.getElementById('mcz-view-toggle');
+    if (viewToggle) {
+      viewToggle.addEventListener('click', withSafeContext(e => {
+        if (!isExtensionLive()) return;
+        const btn = e.target.closest('.mcz-view-btn');
+        if (!btn) return;
+        activeView = btn.dataset.view;
+        document.querySelectorAll('.mcz-view-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderEvents();
+      }));
+    }
   }
 
-  // ─── エントリポイント ─────────────────────────────────────────
-  buildUI();
-  setupFilterListeners();
-  loadAllEvents().catch(err => {
-    const loading = document.getElementById('mcz-loading');
-    if (loading) loading.innerHTML = `<p class="mcz-error">⚠️ データ取得に失敗しました: ${escapeHtml(err.message)}</p>`;
-    console.error('[mcz-schedule]', err);
-  });
 })();
