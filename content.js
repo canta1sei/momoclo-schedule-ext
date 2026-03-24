@@ -9,6 +9,8 @@
     'MAGAZINE', 'BOOK', 'WEB', 'MUSIC', 'MOVIE', 'TICKET'];
   const WEEKDAYS_JP = ['日', '月', '火', '水', '木', '金', '土'];
   const MONTHS_TO_FETCH = 4; // 今月 + 3ヶ月先
+  const CACHE_KEY = 'mcz-schedule-cache';
+  const CACHE_TTL_MS = 3 * 60 * 60 * 1000; // 3時間
 
   // ─── 状態 ───────────────────────────────────────────────────
   const todayDate = new Date();
@@ -16,6 +18,9 @@
 
   let allEvents = [];
   let activeFilter = 'ALL';
+  let activeView = 'list';
+  let calendarYear = todayDate.getFullYear();
+  let calendarMonth = todayDate.getMonth();
 
   // ─── UI 構築 ─────────────────────────────────────────────────
   function buildUI() {
@@ -36,7 +41,13 @@
         </div>
       </header>
       <div class="mcz-filters-wrap">
-        <div class="mcz-filters" id="mcz-filters">${filterButtons}</div>
+        <div class="mcz-filters-row">
+          <div class="mcz-filters" id="mcz-filters">${filterButtons}</div>
+          <div class="mcz-view-toggle" id="mcz-view-toggle">
+            <button class="mcz-view-btn active" data-view="list">リスト</button>
+            <button class="mcz-view-btn" data-view="calendar">カレンダー</button>
+          </div>
+        </div>
       </div>
       <div id="mcz-loading" class="mcz-loading">
         <div class="mcz-loading-spinner"></div>
@@ -50,6 +61,29 @@
     document.body.className = 'mcz-body';
     document.body.appendChild(app);
     document.title = 'ももクロ スケジュール';
+  }
+
+  // ─── キャッシュ ────────────────────────────────────────────
+  function saveCache(events) {
+    try {
+      const payload = {
+        timestamp: Date.now(),
+        events: events.map(e => ({ ...e, date: e.date.getTime() })),
+      };
+      localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+    } catch (_) { /* quota超過などは無視 */ }
+  }
+
+  function loadCache() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const payload = JSON.parse(raw);
+      if (Date.now() - payload.timestamp > CACHE_TTL_MS) return null;
+      return payload.events.map(e => ({ ...e, date: new Date(e.date) }));
+    } catch (_) {
+      return null;
+    }
   }
 
   // ─── イベント取得・パース ──────────────────────────────────
@@ -83,21 +117,46 @@
     return events;
   }
 
-  async function loadAllEvents() {
+  function getMonthsToFetch() {
+    return new Promise(resolve => {
+      chrome.storage.sync.get({ monthsToFetch: MONTHS_TO_FETCH }, r => resolve(r.monthsToFetch));
+    });
+  }
+
+  async function fetchAndStore() {
+    const monthsToFetch = await getMonthsToFetch();
     const fetches = [];
-    for (let i = 0; i < MONTHS_TO_FETCH; i++) {
+    for (let i = 0; i < monthsToFetch; i++) {
       const d = new Date(todayDate.getFullYear(), todayDate.getMonth() + i, 1);
       fetches.push(fetchMonth(d.getFullYear(), d.getMonth() + 1));
     }
-
     const results = await Promise.all(fetches);
-    allEvents = results
+    const events = results
       .flat()
       .filter(e => e.date >= todayDate)
       .sort((a, b) => a.date - b.date);
+    saveCache(events);
+    return events;
+  }
 
-    document.getElementById('mcz-loading').style.display = 'none';
-    renderEvents();
+  async function loadAllEvents() {
+    const cached = loadCache();
+
+    if (cached) {
+      // キャッシュヒット: 即時描画してバックグラウンドで再fetch
+      allEvents = cached;
+      document.getElementById('mcz-loading').style.display = 'none';
+      renderEvents();
+      fetchAndStore().then(events => {
+        allEvents = events;
+        renderEvents();
+      }).catch(() => { /* バックグラウンド更新失敗は無視 */ });
+    } else {
+      // キャッシュミス: fetch完了後に描画
+      allEvents = await fetchAndStore();
+      document.getElementById('mcz-loading').style.display = 'none';
+      renderEvents();
+    }
   }
 
   // ─── レンダリング ─────────────────────────────────────────────
@@ -109,6 +168,11 @@
   }
 
   function renderEvents() {
+    if (activeView === 'calendar') { renderCalendar(); return; }
+    renderListView();
+  }
+
+  function renderListView() {
     const content = document.getElementById('mcz-content');
 
     const filtered = activeFilter === 'ALL'
@@ -172,6 +236,111 @@
     content.innerHTML = fragments.join('');
   }
 
+  function renderCalendar() {
+    const content = document.getElementById('mcz-content');
+
+    const filtered = activeFilter === 'ALL'
+      ? allEvents
+      : allEvents.filter(e => e.category === activeFilter);
+
+    // カレンダー月のイベントを日ごとにまとめる
+    const dayMap = new Map();
+    filtered.forEach(e => {
+      if (e.date.getFullYear() === calendarYear && e.date.getMonth() === calendarMonth) {
+        const d = e.date.getDate();
+        if (!dayMap.has(d)) dayMap.set(d, []);
+        dayMap.get(d).push(e);
+      }
+    });
+
+    const firstDay = new Date(calendarYear, calendarMonth, 1);
+    const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+    const startDow = firstDay.getDay();
+
+    const wdHeaders = WEEKDAYS_JP.map((w, i) =>
+      `<div class="mcz-cal-wd${i === 0 ? ' mcz-cal-wd-sun' : i === 6 ? ' mcz-cal-wd-sat' : ''}">${w}</div>`
+    ).join('');
+
+    let cells = '';
+    for (let i = 0; i < startDow; i++) cells += '<div class="mcz-cal-cell mcz-cal-blank"></div>';
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dow = new Date(calendarYear, calendarMonth, d).getDay();
+      const isToday = calendarYear === todayDate.getFullYear()
+        && calendarMonth === todayDate.getMonth()
+        && d === todayDate.getDate();
+      const isPast = new Date(calendarYear, calendarMonth, d) < todayDate;
+      const evs = dayMap.get(d);
+      let cls = 'mcz-cal-cell';
+      if (isToday) cls += ' mcz-cal-today';
+      if (isPast) cls += ' mcz-cal-past';
+      if (dow === 0) cls += ' mcz-cal-sun';
+      if (dow === 6) cls += ' mcz-cal-sat';
+      if (evs) cls += ' mcz-cal-has-events';
+      const badge = evs ? `<span class="mcz-cal-badge">${evs.length}</span>` : '';
+      cells += `<div class="${cls}" data-day="${d}"><span class="mcz-cal-day">${d}</span>${badge}</div>`;
+    }
+
+    content.innerHTML = `
+      <div class="mcz-calendar">
+        <div class="mcz-cal-nav">
+          <button class="mcz-cal-nav-btn" id="mcz-cal-prev">◀</button>
+          <span class="mcz-cal-month">${calendarYear}年${calendarMonth + 1}月</span>
+          <button class="mcz-cal-nav-btn" id="mcz-cal-next">▶</button>
+        </div>
+        <div class="mcz-cal-grid">${wdHeaders}${cells}</div>
+      </div>
+      <div id="mcz-cal-popover-wrap"></div>
+    `;
+
+    // 日付クリック → ポップオーバー
+    content.querySelectorAll('.mcz-cal-cell.mcz-cal-has-events').forEach(cell => {
+      cell.addEventListener('click', e => {
+        e.stopPropagation();
+        const day = parseInt(cell.dataset.day, 10);
+        const evs = dayMap.get(day) || [];
+        const wrap = document.getElementById('mcz-cal-popover-wrap');
+        const dateStr = `${calendarYear}年${calendarMonth + 1}月${day}日`;
+        const evHtml = evs.map(ev => `
+          <div class="mcz-event-item">
+            <span class="mcz-cat mcz-cat-${ev.category.toLowerCase()}">${escapeHtml(ev.category)}</span>
+            <div class="mcz-event-body">
+              <div class="mcz-event-title">${escapeHtml(ev.title)}</div>
+              ${ev.bodyHtml ? `<div class="mcz-event-text">${sanitizeBodyHtml(ev.bodyHtml)}</div>` : ''}
+            </div>
+          </div>`).join('');
+        wrap.innerHTML = `
+          <div class="mcz-cal-popover">
+            <div class="mcz-cal-popover-header">
+              <span>${escapeHtml(dateStr)}</span>
+              <button class="mcz-cal-popover-close">✕</button>
+            </div>
+            <div class="mcz-cal-popover-body">${evHtml}</div>
+          </div>`;
+        wrap.querySelector('.mcz-cal-popover-close').addEventListener('click', () => {
+          wrap.innerHTML = '';
+        });
+      });
+    });
+
+    // 外クリックでポップオーバーを閉じる
+    content.addEventListener('click', () => {
+      document.getElementById('mcz-cal-popover-wrap').innerHTML = '';
+    });
+
+    document.getElementById('mcz-cal-prev').addEventListener('click', e => {
+      e.stopPropagation();
+      calendarMonth--;
+      if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+      renderCalendar();
+    });
+    document.getElementById('mcz-cal-next').addEventListener('click', e => {
+      e.stopPropagation();
+      calendarMonth++;
+      if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+      renderCalendar();
+    });
+  }
+
   // ─── ユーティリティ ───────────────────────────────────────────
   function escapeHtml(str) {
     return String(str)
@@ -211,6 +380,15 @@
       if (!btn) return;
       activeFilter = btn.dataset.cat;
       document.querySelectorAll('.mcz-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderEvents();
+    });
+
+    document.getElementById('mcz-view-toggle').addEventListener('click', e => {
+      const btn = e.target.closest('.mcz-view-btn');
+      if (!btn) return;
+      activeView = btn.dataset.view;
+      document.querySelectorAll('.mcz-view-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       renderEvents();
     });

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ももクロ スケジュール - 設定</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+      font-size: 14px;
+      color: #333;
+      padding: 20px;
+      min-width: 300px;
+    }
+
+    h2 {
+      font-size: 16px;
+      color: #e91e8c;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #ffe0ef;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+      color: #555;
+    }
+
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      appearance: auto;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #e91e8c;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    input[type="checkbox"] {
+      width: 16px; height: 16px;
+      accent-color: #e91e8c;
+      cursor: pointer;
+    }
+    .notify-sub {
+      margin-top: 10px;
+      padding-left: 4px;
+    }
+
+    .desc {
+      font-size: 12px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .save-btn {
+      background: linear-gradient(135deg, #e91e8c, #ff6b9d);
+      color: #fff;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+    }
+    .save-btn:hover { opacity: 0.9; }
+
+    .status {
+      margin-top: 10px;
+      font-size: 12px;
+      text-align: center;
+      color: #e91e8c;
+      min-height: 18px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🌸 スケジュール設定</h2>
+  <div class="field">
+    <label for="months">取得月数</label>
+    <select id="months">
+      <option value="1">1ヶ月（今月のみ）</option>
+      <option value="2">2ヶ月</option>
+      <option value="3">3ヶ月</option>
+      <option value="4" selected>4ヶ月（デフォルト）</option>
+      <option value="5">5ヶ月</option>
+      <option value="6">6ヶ月</option>
+    </select>
+    <p class="desc">スケジュールページを開いたときに先読みする月数です。多いほど初回読み込みが遅くなります。</p>
+  </div>
+  <div class="field">
+    <label>リマインダー通知</label>
+    <div class="toggle-row">
+      <input type="checkbox" id="notify-enabled">
+      <span>当日・翌日のイベントを毎朝通知する</span>
+    </div>
+    <div class="notify-sub" id="notify-sub">
+      <label for="notify-hour" style="font-weight:normal; margin-top:8px;">通知時刻</label>
+      <select id="notify-hour" style="width:auto; margin-top:4px;">
+        <option value="6">6:00</option>
+        <option value="7">7:00</option>
+        <option value="8" selected>8:00（デフォルト）</option>
+        <option value="9">9:00</option>
+        <option value="10">10:00</option>
+        <option value="12">12:00</option>
+      </select>
+    </div>
+    <p class="desc">通知にはChromeの通知許可が必要です。</p>
+  </div>
+  <button class="save-btn" id="save">保存する</button>
+  <p class="status" id="status"></p>
+  <script src="options.js"></script>
+</body>
+</html>

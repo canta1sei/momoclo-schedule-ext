@@ -291,6 +291,220 @@
   border-color: #e8336e;
 }
 
+/* ─── Filter bar row & View toggle ─────────────────────────── */
+.mcz-filters-row {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px;
+  gap: 10px;
+}
+
+.mcz-filters-row .mcz-filters {
+  max-width: none;
+  margin: 0;
+  padding: 4px 0;
+  flex: 1;
+}
+
+.mcz-view-toggle {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.mcz-view-btn {
+  padding: 5px 14px;
+  border: 1.5px solid #e8a0bc;
+  border-radius: 20px;
+  background: #fff;
+  color: #c0185a;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s, color 0.18s;
+}
+
+.mcz-view-btn.active {
+  background: #c0185a;
+  border-color: #c0185a;
+  color: #fff;
+}
+
+/* ─── Calendar ───────────────────────────────────────────────── */
+.mcz-calendar {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 16px 48px;
+}
+
+.mcz-cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px 0 14px;
+}
+
+.mcz-cal-nav-btn {
+  background: none;
+  border: 1.5px solid #e8a0bc;
+  border-radius: 50%;
+  width: 32px; height: 32px;
+  cursor: pointer;
+  color: #c0185a;
+  font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+
+.mcz-cal-nav-btn:hover { background: #fce4ee; }
+
+.mcz-cal-month {
+  font-size: 18px;
+  font-weight: 800;
+  color: #9b1249;
+  min-width: 130px;
+  text-align: center;
+}
+
+.mcz-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.mcz-cal-wd {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #888;
+  padding: 6px 0;
+}
+.mcz-cal-wd-sun { color: #e8336e; }
+.mcz-cal-wd-sat { color: #1976d2; }
+
+.mcz-cal-cell {
+  background: #fff;
+  border: 1.5px solid #f5d0e0;
+  border-radius: 8px;
+  min-height: 52px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  transition: box-shadow 0.15s;
+  position: relative;
+}
+
+.mcz-cal-blank {
+  border-color: transparent;
+  background: transparent;
+}
+
+.mcz-cal-cell.mcz-cal-has-events {
+  cursor: pointer;
+}
+
+.mcz-cal-cell.mcz-cal-has-events:hover {
+  box-shadow: 0 3px 12px rgba(192, 24, 90, 0.18);
+  border-color: #e8336e;
+}
+
+.mcz-cal-today {
+  border-color: #e8336e !important;
+  background: #fff0f5;
+}
+
+.mcz-cal-today .mcz-cal-day {
+  background: #e8336e;
+  color: #fff;
+  border-radius: 50%;
+  width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.mcz-cal-past { opacity: 0.45; }
+
+.mcz-cal-sun .mcz-cal-day { color: #e8336e; }
+.mcz-cal-sat .mcz-cal-day { color: #1976d2; }
+
+.mcz-cal-day {
+  font-size: 13px;
+  font-weight: 700;
+  color: #3d1a2e;
+  line-height: 1;
+}
+
+.mcz-cal-badge {
+  background: #e8336e;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 10px;
+  padding: 1px 6px;
+  min-width: 18px;
+  text-align: center;
+}
+
+/* ─── Calendar Popover ───────────────────────────────────────── */
+#mcz-cal-popover-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+#mcz-cal-popover-wrap:not(:empty) {
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.mcz-cal-popover {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(192, 24, 90, 0.22);
+  width: min(480px, 92vw);
+  max-height: 70vh;
+  overflow-y: auto;
+  pointer-events: auto;
+}
+
+.mcz-cal-popover-header {
+  background: linear-gradient(90deg, #9b1249, #c0185a);
+  color: #fff;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 800;
+  font-size: 15px;
+  border-radius: 14px 14px 0 0;
+  position: sticky;
+  top: 0;
+}
+
+.mcz-cal-popover-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.mcz-cal-popover-body {
+  padding: 4px 0;
+}
+
 /* ─── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 600px) {
   .mcz-title {

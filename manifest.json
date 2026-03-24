@@ -3,6 +3,19 @@
   "name": "ももクロ スケジュール改善",
   "version": "1.0.0",
   "description": "ももいろクローバーZ公式スケジュールページを見やすく置き換えます。複数月を一括表示・日付グルーピング・クライアントサイドフィルタリング対応。",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ももクロ スケジュール"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  },
+  "permissions": ["storage", "alarms", "notifications"],
+  "host_permissions": ["*://www.momoclo.net/*"],
   "content_scripts": [
     {
       "matches": ["*://www.momoclo.net/schedule*"],
