@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>プライバシーポリシー - ももクロ スケジュール見やすく</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+      background: #0b0b10;
+      color: #f8f6ff;
+    }
+    header {
+      background: linear-gradient(120deg, #ff2b2b 0%, #ff4aa2 45%, #8f42ff 100%);
+      padding: 32px 24px;
+      text-align: center;
+    }
+    header h1 { font-size: 22px; font-weight: 900; }
+    main { max-width: 700px; margin: 40px auto; padding: 0 24px 64px; }
+    h2 { font-size: 16px; color: #ff4aa2; margin: 24px 0 10px; }
+    p, li { color: #c7c2d6; line-height: 1.8; font-size: 14px; margin-bottom: 8px; }
+    ul { padding-left: 20px; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+    th { background: #1d1f2f; color: #f8f6ff; padding: 8px 12px; text-align: left; }
+    td { padding: 8px 12px; border-top: 1px solid #2a2d3d; color: #c7c2d6; }
+    .updated { font-size: 12px; color: #888; margin-top: 8px; }
+    a { color: #ff4aa2; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🌸 プライバシーポリシー</h1>
+    <p class="updated" style="color:rgba(255,255,255,0.7);margin-top:6px;">最終更新: 2026年3月25日</p>
+  </header>
+  <main>
+    <h2>収集する情報</h2>
+    <p>本拡張機能はユーザーの個人情報を収集・外部に送信しません。すべてのデータはユーザーのブラウザ内にのみ保存されます。</p>
+
+    <table>
+      <tr><th>データ</th><th>保存先</th><th>目的</th></tr>
+      <tr><td>スケジュールキャッシュ</td><td>localStorage / chrome.storage.local</td><td>再アクセス時の高速表示</td></tr>
+      <tr><td>設定（取得月数・通知・ON/OFF）</td><td>chrome.storage.sync</td><td>ユーザー設定の保存・同期</td></tr>
+    </table>
+
+    <h2>外部通信</h2>
+    <p>本拡張機能は以下のサイトにのみアクセスします：</p>
+    <ul>
+      <li><strong>https://www.momoclo.net/schedule</strong> — ももいろクローバーZ 公式スケジュールページ（表示データの取得のみ）</li>
+    </ul>
+    <p>取得したデータは第三者に送信されません。</p>
+
+    <h2>パーミッション</h2>
+    <table>
+      <tr><th>パーミッション</th><th>用途</th></tr>
+      <tr><td>storage</td><td>設定・キャッシュの保存</td></tr>
+      <tr><td>alarms</td><td>毎朝のリマインダー通知のスケジューリング</td></tr>
+      <tr><td>notifications</td><td>イベントリマインダーの表示</td></tr>
+      <tr><td>tabs</td><td>設定変更時の対象タブのリロード</td></tr>
+    </table>
+
+    <h2>免責事項</h2>
+    <p>本拡張機能はファンが個人利用のために作成した非公式ツールです。ももいろクローバーZ および所属事務所・レーベルとは一切関係ありません。</p>
+
+    <h2>お問い合わせ</h2>
+    <p><a href="https://github.com/canta1sei/momoclo-schedule-ext/issues">GitHub Issues</a> にてお知らせください。</p>
+  </main>
+</body>
+</html>
