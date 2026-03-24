@@ -45,6 +45,25 @@
       font-size: 15px;
       margin-top: 8px;
     }
+    .screenshots { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+    .screenshots img {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #2a2d3d;
+      display: block;
+    }
+    .screenshot-popup {
+      width: auto !important;
+      max-width: 320px;
+      align-self: center;
+    }
+    .screenshot-label {
+      font-size: 12px;
+      color: #888;
+      margin-top: 6px;
+      text-align: center;
+    }
+    .screenshot-item { display: flex; flex-direction: column; }
   </style>
 </head>
 <body>
@@ -58,6 +77,23 @@
       <p>ももいろクローバーZ 公式スケジュールページをより見やすい UI に置き換える Chrome 拡張機能です。</p>
       <p>複数月を一括取得・日付グルーピング・カレンダービュー・リマインダー通知に対応。</p>
       <a class="btn" href="https://github.com/canta1sei/momoclo-schedule-ext">GitHub で見る →</a>
+    </div>
+    <div class="card">
+      <h2>スクリーンショット</h2>
+      <div class="screenshots">
+        <div class="screenshot-item">
+          <img src="screenshot-list.png" alt="リストビュー">
+          <p class="screenshot-label">リストビュー — 複数月を一括表示・日付グルーピング</p>
+        </div>
+        <div class="screenshot-item">
+          <img src="screenshot-calendar.png" alt="カレンダービュー">
+          <p class="screenshot-label">カレンダービュー — 月ごとの全体像をひと目で把握</p>
+        </div>
+        <div class="screenshot-item">
+          <img src="screenshot-popup.png" alt="ポップアップ" class="screenshot-popup">
+          <p class="screenshot-label">ポップアップ — アイコンクリックで直近スケジュールを確認</p>
+        </div>
+      </div>
     </div>
     <div class="card">
       <h2>リンク</h2>
