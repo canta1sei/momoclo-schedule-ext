@@ -34,6 +34,21 @@
     }
     .header-link:hover { color: #fff; }
 
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #fff7fb;
+      border-bottom: 1px solid #f0d7e5;
+      font-size: 12px;
+    }
+    .toggle-row input {
+      width: 14px;
+      height: 14px;
+      accent-color: #e91e8c;
+    }
+
     .loading {
       padding: 32px;
       text-align: center;
@@ -136,6 +151,10 @@
   <div class="header">
     <span class="header-title">🌸 ももクロ スケジュール</span>
     <a class="header-link" href="https://www.momoclo.net/schedule" target="_blank">公式サイト →</a>
+  </div>
+  <div class="toggle-row">
+    <input type="checkbox" id="ext-enabled">
+    <label for="ext-enabled">拡張機能を有効にする</label>
   </div>
   <div id="content">
     <div class="loading">

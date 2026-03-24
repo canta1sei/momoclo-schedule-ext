@@ -1,10 +1,19 @@
 /* ─── Reset & Base ──────────────────────────────────────────── */
 .mcz-body {
+  --mcz-primary: #e8336e;
+  --mcz-primary-dark: #c0185a;
+  --mcz-primary-darker: #9b1249;
+  --mcz-primary-light: #f06090;
+  --mcz-primary-soft: #fce4ee;
+  --mcz-primary-pale: #fff0f5;
+  --mcz-primary-border: #f5d0e0;
+  --mcz-primary-muted: #b05078;
+
   margin: 0;
   padding: 0;
   font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic UI',
     'Meiryo', sans-serif;
-  background: #fff0f5;
+  background: var(--mcz-primary-pale);
   color: #3d1a2e;
   min-height: 100vh;
 }
@@ -15,10 +24,10 @@
 
 /* ─── Header ────────────────────────────────────────────────── */
 .mcz-header {
-  background: linear-gradient(135deg, #e8336e 0%, #c0185a 50%, #9b1249 100%);
+  background: linear-gradient(135deg, var(--mcz-primary) 0%, var(--mcz-primary-dark) 50%, var(--mcz-primary-darker) 100%);
   padding: 28px 24px 24px;
   text-align: center;
-  box-shadow: 0 4px 16px rgba(192, 24, 90, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
 }
 
 .mcz-header-inner {
@@ -47,14 +56,117 @@
   text-transform: uppercase;
 }
 
+.mcz-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.mcz-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  white-space: nowrap;
+}
+
+.mcz-status-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.mcz-toggle {
+  position: relative;
+  width: 52px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+}
+
+.mcz-toggle-text {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.mcz-toggle-knob {
+  position: absolute;
+  right: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.mcz-toggle:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.mcz-disabled-badge {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1.5px solid var(--mcz-primary-border, #f5d0e0);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic UI',
+    'Meiryo', sans-serif;
+}
+
+.mcz-disabled-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--mcz-primary-dark, #c0185a);
+  letter-spacing: 0.04em;
+}
+
+.mcz-disabled-btn {
+  border: none;
+  background: var(--mcz-primary, #e8336e);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mcz-disabled-btn:hover {
+  filter: brightness(0.95);
+}
+
 /* ─── Filter bar ─────────────────────────────────────────────── */
 .mcz-filters-wrap {
   background: #fff;
-  border-bottom: 2px solid #f8cfe0;
+  border-bottom: 2px solid var(--mcz-primary-border);
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 8px rgba(192, 24, 90, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .mcz-filters {
@@ -68,10 +180,10 @@
 
 .mcz-filter-btn {
   padding: 5px 14px;
-  border: 1.5px solid #e8a0bc;
+  border: 1.5px solid var(--mcz-primary-border);
   border-radius: 20px;
   background: #fff;
-  color: #c0185a;
+  color: var(--mcz-primary-dark);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -81,31 +193,31 @@
 }
 
 .mcz-filter-btn:hover {
-  background: #fce4ee;
-  border-color: #c0185a;
+  background: var(--mcz-primary-soft);
+  border-color: var(--mcz-primary-dark);
   transform: translateY(-1px);
 }
 
 .mcz-filter-btn.active {
-  background: #e8336e;
-  border-color: #e8336e;
+  background: var(--mcz-primary);
+  border-color: var(--mcz-primary);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(232, 51, 110, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
 }
 
 /* ─── Loading ────────────────────────────────────────────────── */
 .mcz-loading {
   text-align: center;
   padding: 60px 20px;
-  color: #b05078;
+  color: var(--mcz-primary-muted);
   font-size: 16px;
 }
 
 .mcz-loading-spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #f8cfe0;
-  border-top-color: #e8336e;
+  border: 4px solid var(--mcz-primary-border);
+  border-top-color: var(--mcz-primary);
   border-radius: 50%;
   margin: 0 auto 16px;
   animation: mcz-spin 0.8s linear infinite;
@@ -116,7 +228,7 @@
 }
 
 .mcz-error {
-  color: #c0185a;
+  color: var(--mcz-primary-dark);
   font-weight: 700;
 }
 
@@ -130,7 +242,7 @@
 .mcz-empty {
   text-align: center;
   padding: 60px 20px;
-  color: #b05078;
+  color: var(--mcz-primary-muted);
   font-size: 16px;
 }
 
@@ -139,38 +251,38 @@
   background: #fff;
   border-radius: 12px;
   margin-bottom: 14px;
-  box-shadow: 0 2px 10px rgba(192, 24, 90, 0.08);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  border: 1.5px solid #f5d0e0;
+  border: 1.5px solid var(--mcz-primary-border);
   transition: box-shadow 0.2s;
 }
 
 .mcz-day-block:hover {
-  box-shadow: 0 4px 18px rgba(192, 24, 90, 0.14);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
 }
 
 /* 今日 */
 .mcz-day-today {
-  border-color: #e8336e;
-  box-shadow: 0 4px 20px rgba(232, 51, 110, 0.22);
+  border-color: var(--mcz-primary);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
 }
 
 .mcz-day-today .mcz-day-header {
-  background: linear-gradient(90deg, #e8336e, #f06090);
+  background: linear-gradient(90deg, var(--mcz-primary), var(--mcz-primary-light));
 }
 
 /* 今週 */
 .mcz-day-this-week {
-  border-color: #f08cba;
+  border-color: var(--mcz-primary-border);
 }
 
 .mcz-day-this-week .mcz-day-header {
-  background: linear-gradient(90deg, #c0185a, #e05585);
+  background: linear-gradient(90deg, var(--mcz-primary-dark), var(--mcz-primary));
 }
 
 /* ─── Day header ─────────────────────────────────────────────── */
 .mcz-day-header {
-  background: linear-gradient(90deg, #9b1249, #c0185a);
+  background: linear-gradient(90deg, var(--mcz-primary-darker), var(--mcz-primary-dark));
   padding: 10px 16px;
   display: flex;
   align-items: center;
@@ -197,7 +309,7 @@
 
 .mcz-badge-today {
   background: #fff;
-  color: #e8336e;
+  color: var(--mcz-primary);
   box-shadow: 0 1px 6px rgba(0,0,0,0.15);
 }
 
@@ -240,7 +352,7 @@
   background: #aaa;
 }
 
-.mcz-cat-live       { background: #e8336e; }
+.mcz-cat-live       { background: var(--mcz-primary); }
 .mcz-cat-event      { background: #9c27b0; }
 .mcz-cat-streaming  { background: #1976d2; }
 .mcz-cat-tv         { background: #00796b; }
@@ -279,16 +391,16 @@
 
 .mcz-event-link a {
   font-size: 12px;
-  color: #c0185a;
+  color: var(--mcz-primary-dark);
   word-break: break-all;
   text-decoration: none;
-  border-bottom: 1px dotted #e8a0bc;
+  border-bottom: 1px dotted var(--mcz-primary-border);
   transition: color 0.15s, border-color 0.15s;
 }
 
 .mcz-event-link a:hover {
-  color: #e8336e;
-  border-color: #e8336e;
+  color: var(--mcz-primary);
+  border-color: var(--mcz-primary);
 }
 
 /* ─── Filter bar row & View toggle ─────────────────────────── */
@@ -317,10 +429,10 @@
 
 .mcz-view-btn {
   padding: 5px 14px;
-  border: 1.5px solid #e8a0bc;
+  border: 1.5px solid var(--mcz-primary-border);
   border-radius: 20px;
   background: #fff;
-  color: #c0185a;
+  color: var(--mcz-primary-dark);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -329,8 +441,8 @@
 }
 
 .mcz-view-btn.active {
-  background: #c0185a;
-  border-color: #c0185a;
+  background: var(--mcz-primary-dark);
+  border-color: var(--mcz-primary-dark);
   color: #fff;
 }
 
@@ -351,22 +463,22 @@
 
 .mcz-cal-nav-btn {
   background: none;
-  border: 1.5px solid #e8a0bc;
+  border: 1.5px solid var(--mcz-primary-border);
   border-radius: 50%;
   width: 32px; height: 32px;
   cursor: pointer;
-  color: #c0185a;
+  color: var(--mcz-primary-dark);
   font-size: 12px;
   display: flex; align-items: center; justify-content: center;
   transition: background 0.15s;
 }
 
-.mcz-cal-nav-btn:hover { background: #fce4ee; }
+.mcz-cal-nav-btn:hover { background: var(--mcz-primary-soft); }
 
 .mcz-cal-month {
   font-size: 18px;
   font-weight: 800;
-  color: #9b1249;
+  color: var(--mcz-primary-darker);
   min-width: 130px;
   text-align: center;
 }
@@ -384,12 +496,12 @@
   color: #888;
   padding: 6px 0;
 }
-.mcz-cal-wd-sun { color: #e8336e; }
+.mcz-cal-wd-sun { color: var(--mcz-primary); }
 .mcz-cal-wd-sat { color: #1976d2; }
 
 .mcz-cal-cell {
   background: #fff;
-  border: 1.5px solid #f5d0e0;
+  border: 1.5px solid var(--mcz-primary-border);
   border-radius: 8px;
   min-height: 52px;
   padding: 6px;
@@ -411,17 +523,17 @@
 }
 
 .mcz-cal-cell.mcz-cal-has-events:hover {
-  box-shadow: 0 3px 12px rgba(192, 24, 90, 0.18);
-  border-color: #e8336e;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.16);
+  border-color: var(--mcz-primary);
 }
 
 .mcz-cal-today {
-  border-color: #e8336e !important;
-  background: #fff0f5;
+  border-color: var(--mcz-primary) !important;
+  background: var(--mcz-primary-pale);
 }
 
 .mcz-cal-today .mcz-cal-day {
-  background: #e8336e;
+  background: var(--mcz-primary);
   color: #fff;
   border-radius: 50%;
   width: 22px; height: 22px;
@@ -430,7 +542,7 @@
 
 .mcz-cal-past { opacity: 0.45; }
 
-.mcz-cal-sun .mcz-cal-day { color: #e8336e; }
+.mcz-cal-sun .mcz-cal-day { color: var(--mcz-primary); }
 .mcz-cal-sat .mcz-cal-day { color: #1976d2; }
 
 .mcz-cal-day {
@@ -441,7 +553,7 @@
 }
 
 .mcz-cal-badge {
-  background: #e8336e;
+  background: var(--mcz-primary);
   color: #fff;
   font-size: 10px;
   font-weight: 800;
@@ -470,7 +582,7 @@
 .mcz-cal-popover {
   background: #fff;
   border-radius: 14px;
-  box-shadow: 0 8px 32px rgba(192, 24, 90, 0.22);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
   width: min(480px, 92vw);
   max-height: 70vh;
   overflow-y: auto;
@@ -478,7 +590,7 @@
 }
 
 .mcz-cal-popover-header {
-  background: linear-gradient(90deg, #9b1249, #c0185a);
+  background: linear-gradient(90deg, var(--mcz-primary-darker), var(--mcz-primary-dark));
   color: #fff;
   padding: 12px 16px;
   display: flex;
@@ -509,6 +621,13 @@
 @media (max-width: 600px) {
   .mcz-title {
     font-size: 20px;
+  }
+  .mcz-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .mcz-status {
+    align-self: flex-start;
   }
 
   .mcz-filter-btn {

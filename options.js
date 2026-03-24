@@ -5,8 +5,9 @@ const DEFAULT_NOTIFY_HOUR = 8;
 
 // 保存済みの値をロード
 chrome.storage.sync.get(
-  { monthsToFetch: DEFAULT_MONTHS, notifyEnabled: true, notifyHour: DEFAULT_NOTIFY_HOUR },
+  { enabled: true, monthsToFetch: DEFAULT_MONTHS, notifyEnabled: true, notifyHour: DEFAULT_NOTIFY_HOUR },
   result => {
+    document.getElementById('ext-enabled').checked = result.enabled;
     document.getElementById('months').value = result.monthsToFetch;
     document.getElementById('notify-enabled').checked = result.notifyEnabled;
     document.getElementById('notify-hour').value = result.notifyHour;
@@ -26,11 +27,12 @@ function updateNotifySubVisibility(enabled) {
 
 // 保存ボタン
 document.getElementById('save').addEventListener('click', () => {
+  const enabled = document.getElementById('ext-enabled').checked;
   const months = parseInt(document.getElementById('months').value, 10);
   const notifyEnabled = document.getElementById('notify-enabled').checked;
   const notifyHour = parseInt(document.getElementById('notify-hour').value, 10);
 
-  chrome.storage.sync.set({ monthsToFetch: months, notifyEnabled, notifyHour }, () => {
+  chrome.storage.sync.set({ enabled, monthsToFetch: months, notifyEnabled, notifyHour }, () => {
     const status = document.getElementById('status');
     status.textContent = '✅ 保存しました！';
     setTimeout(() => { status.textContent = ''; }, 2000);

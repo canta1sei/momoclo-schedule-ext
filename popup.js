@@ -5,6 +5,19 @@
   const CACHE_TTL_MS = 3 * 60 * 60 * 1000; // 3時間
   const DAYS_AHEAD = 14; // 2週間先まで表示
   const WEEKDAYS_JP = ['日', '月', '火', '水', '木', '金', '土'];
+  const DEFAULT_SETTINGS = { enabled: true };
+
+  const enabledToggle = document.getElementById('ext-enabled');
+  if (enabledToggle) {
+    chrome.storage.sync.get(DEFAULT_SETTINGS, result => {
+      enabledToggle.checked = result.enabled;
+    });
+    enabledToggle.addEventListener('change', () => {
+      chrome.storage.sync.set({ enabled: enabledToggle.checked }, () => {
+        reloadScheduleTabs();
+      });
+    });
+  }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -133,6 +146,14 @@
             `<div class="error">⚠️ 取得に失敗しました: ${escapeHtml(err.message)}</div>`;
         });
     }
+  }
+
+  function reloadScheduleTabs() {
+    chrome.tabs.query({ url: '*://www.momoclo.net/schedule*' }, tabs => {
+      tabs.forEach(tab => {
+        if (tab.id) chrome.tabs.reload(tab.id);
+      });
+    });
   }
 
   main();
