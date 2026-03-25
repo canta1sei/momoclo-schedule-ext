@@ -8,10 +8,7 @@
   const CATEGORIES = ['ALL', 'LIVE', 'EVENT', 'STREAMING', 'TV', 'RADIO',
     'MAGAZINE', 'BOOK', 'WEB', 'MUSIC', 'MOVIE', 'TICKET'];
   const WEEKDAYS_JP = ['日', '月', '火', '水', '木', '金', '土'];
-  const MONTHS_TO_FETCH = 4; // 今月 + 3ヶ月先
   const CACHE_KEY = 'mcz-schedule-cache';
-  const CACHE_TTL_MS = 3 * 60 * 60 * 1000; // 3時間
-  const DEFAULT_SETTINGS = { enabled: true, monthsToFetch: MONTHS_TO_FETCH };
 
   // ─── 状態 ───────────────────────────────────────────────────
   const todayDate = new Date();
@@ -22,8 +19,10 @@
   let activeView = 'list';
   let calendarYear = todayDate.getFullYear();
   let calendarMonth = todayDate.getMonth();
+  let settings = MCZ_DEFAULT_SETTINGS;
 
-  loadSettings().then(settings => {
+  mczLoadSettings().then(s => {
+    settings = s;
     if (!settings.enabled) {
       injectDisabledBadge();
       return;
@@ -34,7 +33,7 @@
     setupFilterListeners();
     loadAllEvents().catch(err => {
       const loading = document.getElementById('mcz-loading');
-      if (loading) loading.innerHTML = `<p class="mcz-error">⚠️ データ取得に失敗しました: ${escapeHtml(err.message)}</p>`;
+      if (loading) loading.innerHTML = `<p class="mcz-error">⚠️ データ取得に失敗しました: ${mczEscapeHtml(err.message)}</p>`;
       console.error('[mcz-schedule]', err);
     });
   });
@@ -107,42 +106,11 @@
       const raw = localStorage.getItem(CACHE_KEY);
       if (!raw) return null;
       const payload = JSON.parse(raw);
-      if (Date.now() - payload.timestamp > CACHE_TTL_MS) return null;
+      if (Date.now() - payload.timestamp > MCZ_CACHE_TTL_MS) return null;
       return payload.events.map(e => ({ ...e, date: new Date(e.date) }));
     } catch (_) {
       return null;
     }
-  }
-
-  // ─── イベント取得・パース ──────────────────────────────────
-  async function fetchMonth(year, month) {
-    const mm = String(month).padStart(2, '0');
-    const url = `https://www.momoclo.net/schedule?target_year=${year}&target_month=${mm}`;
-    const res = await fetch(url);
-    if (!res.ok) return [];
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-
-    const events = [];
-    doc.querySelectorAll('.schedule_list_container').forEach(el => {
-      const dayText = el.querySelector('.schedule_list_day')?.textContent.trim();
-      const weekText = el.querySelector('.schedule_list_week')?.textContent.trim();
-      const category = el.querySelector('.schedule_list_genre_text')?.textContent.trim() || '';
-      const title = el.querySelector('.schedule_list_title')?.textContent.trim() || '';
-      const textEl = el.querySelector('.schedule_list_text');
-      const bodyHtml = textEl ? textEl.innerHTML.trim() : '';
-      const linkEl = el.querySelector('.schedule_list_link a');
-      const link = linkEl ? linkEl.getAttribute('href') : null;
-
-      if (!dayText) return;
-
-      const day = parseInt(dayText, 10);
-      const date = new Date(year, month - 1, day);
-      date.setHours(0, 0, 0, 0);
-
-      events.push({ date, day, week: weekText, category, title, bodyHtml, link });
-    });
-    return events;
   }
 
   function getMonthsToFetch() {
@@ -154,7 +122,7 @@
     const fetches = [];
     for (let i = 0; i < monthsToFetch; i++) {
       const d = new Date(todayDate.getFullYear(), todayDate.getMonth() + i, 1);
-      fetches.push(fetchMonth(d.getFullYear(), d.getMonth() + 1));
+      fetches.push(mczFetchMonth(d.getFullYear(), d.getMonth() + 1));
     }
     const results = await Promise.all(fetches);
     const events = results
@@ -237,13 +205,13 @@
       const eventsHtml = events.map(ev => {
         const catClass = `mcz-cat mcz-cat-${ev.category.toLowerCase()}`;
         const linkHtml = ev.link
-          ? `<div class="mcz-event-link"><a href="${escapeAttr(ev.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(ev.link)}</a></div>`
+          ? `<div class="mcz-event-link"><a href="${escapeAttr(ev.link)}" target="_blank" rel="noopener noreferrer">${mczEscapeHtml(ev.link)}</a></div>`
           : '';
         return `
           <div class="mcz-event-item">
-            <span class="${catClass}">${escapeHtml(ev.category)}</span>
+            <span class="${catClass}">${mczEscapeHtml(ev.category)}</span>
             <div class="mcz-event-body">
-              <div class="mcz-event-title">${escapeHtml(ev.title)}</div>
+              <div class="mcz-event-title">${mczEscapeHtml(ev.title)}</div>
               ${ev.bodyHtml ? `<div class="mcz-event-text">${sanitizeBodyHtml(ev.bodyHtml)}</div>` : ''}
               ${linkHtml}
             </div>
@@ -333,16 +301,16 @@
         const dateStr = `${calendarYear}年${calendarMonth + 1}月${day}日`;
         const evHtml = evs.map(ev => `
           <div class="mcz-event-item">
-            <span class="mcz-cat mcz-cat-${ev.category.toLowerCase()}">${escapeHtml(ev.category)}</span>
+            <span class="mcz-cat mcz-cat-${ev.category.toLowerCase()}">${mczEscapeHtml(ev.category)}</span>
             <div class="mcz-event-body">
-              <div class="mcz-event-title">${escapeHtml(ev.title)}</div>
+              <div class="mcz-event-title">${mczEscapeHtml(ev.title)}</div>
               ${ev.bodyHtml ? `<div class="mcz-event-text">${sanitizeBodyHtml(ev.bodyHtml)}</div>` : ''}
             </div>
           </div>`).join('');
         wrap.innerHTML = `
           <div class="mcz-cal-popover">
             <div class="mcz-cal-popover-header">
-              <span>${escapeHtml(dateStr)}</span>
+              <span>${mczEscapeHtml(dateStr)}</span>
               <button class="mcz-cal-popover-close">✕</button>
             </div>
             <div class="mcz-cal-popover-body">${evHtml}</div>
@@ -373,20 +341,6 @@
   }
 
   // ─── ユーティリティ ───────────────────────────────────────────
-  function loadSettings() {
-    return new Promise(resolve => {
-      try {
-        if (!isExtensionLive() || !chrome?.storage?.sync) {
-          resolve(DEFAULT_SETTINGS);
-          return;
-        }
-        chrome.storage.sync.get(DEFAULT_SETTINGS, result => resolve(result));
-      } catch (_) {
-        resolve(DEFAULT_SETTINGS);
-      }
-    });
-  }
-
   function injectDisabledBadge() {
     if (document.getElementById('mcz-disabled-badge')) return;
     const badge = document.createElement('div');
@@ -432,14 +386,6 @@
     } catch (_) {
       return false;
     }
-  }
-
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
   }
 
   function escapeAttr(str) {

@@ -2,14 +2,12 @@
   'use strict';
 
   const CACHE_KEY = 'mcz-popup-cache';
-  const CACHE_TTL_MS = 3 * 60 * 60 * 1000; // 3時間
   const DAYS_AHEAD = 14; // 2週間先まで表示
   const WEEKDAYS_JP = ['日', '月', '火', '水', '木', '金', '土'];
-  const DEFAULT_SETTINGS = { enabled: true };
 
   const enabledToggle = document.getElementById('ext-enabled');
   if (enabledToggle) {
-    chrome.storage.sync.get(DEFAULT_SETTINGS, result => {
+    chrome.storage.sync.get(MCZ_DEFAULT_SETTINGS, result => {
       enabledToggle.checked = result.enabled;
     });
     enabledToggle.addEventListener('change', () => {
@@ -36,7 +34,7 @@
     return new Promise(resolve => {
       chrome.storage.local.get(CACHE_KEY, result => {
         const payload = result[CACHE_KEY];
-        if (!payload || Date.now() - payload.timestamp > CACHE_TTL_MS) {
+        if (!payload || Date.now() - payload.timestamp > MCZ_CACHE_TTL_MS) {
           resolve(null);
           return;
         }
@@ -45,33 +43,13 @@
     });
   }
 
-  // ─── fetch & parse ────────────────────────────────────────
-  async function fetchMonth(year, month) {
-    const mm = String(month).padStart(2, '0');
-    const url = `https://www.momoclo.net/schedule?target_year=${year}&target_month=${mm}`;
-    const res = await fetch(url);
-    if (!res.ok) return [];
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-
-    const events = [];
-    doc.querySelectorAll('.schedule_list_container').forEach(el => {
-      const dayText = el.querySelector('.schedule_list_day')?.textContent.trim();
-      const category = el.querySelector('.schedule_list_genre_text')?.textContent.trim() || '';
-      const title = el.querySelector('.schedule_list_title')?.textContent.trim() || '';
-      if (!dayText) return;
-      const date = new Date(year, month - 1, parseInt(dayText, 10));
-      date.setHours(0, 0, 0, 0);
-      events.push({ date, category, title });
-    });
-    return events;
-  }
-
+  // ─── fetch ────────────────────────────────────────────────
   async function fetchUpcoming() {
+    const { monthsToFetch } = await mczLoadSettings();
     const months = [];
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < monthsToFetch; i++) {
       const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
-      months.push(fetchMonth(d.getFullYear(), d.getMonth() + 1));
+      months.push(mczFetchMonth(d.getFullYear(), d.getMonth() + 1));
     }
     const results = await Promise.all(months);
     const events = results.flat()
@@ -82,12 +60,6 @@
   }
 
   // ─── レンダリング ─────────────────────────────────────────
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
   function render(events) {
     const content = document.getElementById('content');
 
@@ -115,8 +87,8 @@
       const evHtml = evs.map(ev => {
         const catClass = `cat cat-${ev.category.toLowerCase()}`;
         return `<div class="event-item">
-          <span class="${catClass}">${escapeHtml(ev.category)}</span>
-          <span class="event-title">${escapeHtml(ev.title)}</span>
+          <span class="${catClass}">${mczEscapeHtml(ev.category)}</span>
+          <span class="event-title">${mczEscapeHtml(ev.title)}</span>
         </div>`;
       }).join('');
 
@@ -143,7 +115,7 @@
         .then(render)
         .catch(err => {
           document.getElementById('content').innerHTML =
-            `<div class="error">⚠️ 取得に失敗しました: ${escapeHtml(err.message)}</div>`;
+            `<div class="error">⚠️ 取得に失敗しました: ${mczEscapeHtml(err.message)}</div>`;
         });
     }
   }

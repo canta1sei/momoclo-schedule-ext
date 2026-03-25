@@ -1,5 +1,7 @@
 'use strict';
 
+importScripts('shared.js');
+
 const ALARM_NAME = 'mcz-daily-reminder';
 const DEFAULT_NOTIFY_HOUR = 8; // 毎朝8時
 
@@ -42,25 +44,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 // ─── fetch & parse ─────────────────────────────────────────
 async function fetchEventsForDate(year, month, targetDay) {
-  const mm = String(month).padStart(2, '0');
-  const url = `https://www.momoclo.net/schedule?target_year=${year}&target_month=${mm}`;
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return [];
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const events = [];
-    doc.querySelectorAll('.schedule_list_container').forEach(el => {
-      const dayText = el.querySelector('.schedule_list_day')?.textContent.trim();
-      if (!dayText || parseInt(dayText, 10) !== targetDay) return;
-      const category = el.querySelector('.schedule_list_genre_text')?.textContent.trim() || '';
-      const title = el.querySelector('.schedule_list_title')?.textContent.trim() || '';
-      if (title) events.push({ category, title });
-    });
-    return events;
-  } catch (_) {
-    return [];
-  }
+  const events = await mczFetchMonth(year, month);
+  return events.filter(e => e.day === targetDay);
 }
 
 // ─── 通知送信 ───────────────────────────────────────────────

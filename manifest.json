@@ -31,7 +31,7 @@
   "content_scripts": [
     {
       "matches": ["*://www.momoclo.net/schedule*"],
-      "js": ["content.js"],
+      "js": ["shared.js", "content.js"],
       "css": ["style.css"],
       "run_at": "document_idle"
     }
