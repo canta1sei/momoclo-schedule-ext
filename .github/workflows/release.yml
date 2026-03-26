@@ -17,13 +17,17 @@ jobs:
 
       - name: Create zip
         run: |
-          zip -r momoclo-schedule-ext-${{ github.ref_name }}.zip . \
-            --exclude '.github/*' \
-            --exclude 'docs/*' \
-            --exclude '.gitignore' \
-            --exclude 'README.md' \
-            --exclude 'LICENSE' \
-            --exclude '.git/*'
+          DIR="momoclo-schedule-ext-${{ github.ref_name }}"
+          mkdir "$DIR"
+          rsync -a \
+            --exclude='.github' \
+            --exclude='docs' \
+            --exclude='.gitignore' \
+            --exclude='README.md' \
+            --exclude='LICENSE' \
+            --exclude='.git' \
+            . "$DIR/"
+          zip -r "$DIR.zip" "$DIR/"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
