@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create zip
+        run: |
+          zip -r momoclo-schedule-ext-${{ github.ref_name }}.zip . \
+            --exclude '.github/*' \
+            --exclude 'docs/*' \
+            --exclude '.gitignore' \
+            --exclude 'README.md' \
+            --exclude 'LICENSE' \
+            --exclude '.git/*'
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          files: momoclo-schedule-ext-${{ github.ref_name }}.zip
