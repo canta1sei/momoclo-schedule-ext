@@ -18,7 +18,7 @@ jobs:
       - name: Create zip
         run: |
           DIR="momoclo-schedule-ext-${{ github.ref_name }}"
-          mkdir "$DIR"
+          mkdir "/tmp/$DIR"
           rsync -a \
             --exclude='.github' \
             --exclude='docs' \
@@ -26,8 +26,9 @@ jobs:
             --exclude='README.md' \
             --exclude='LICENSE' \
             --exclude='.git' \
-            . "$DIR/"
-          zip -r "$DIR.zip" "$DIR/"
+            . "/tmp/$DIR/"
+          cd /tmp && zip -r "$DIR.zip" "$DIR/"
+          mv "/tmp/$DIR.zip" "$GITHUB_WORKSPACE/"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
